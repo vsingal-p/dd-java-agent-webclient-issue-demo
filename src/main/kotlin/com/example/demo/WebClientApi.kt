@@ -1,6 +1,5 @@
 package com.example.demo
 
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -14,31 +13,15 @@ class WebClientApi(
 ) {
     private val printlnFilter =
         ExchangeFilterFunction { request, next ->
-            LOG.info(
-                """
-                  
-                  
-                  ${request.method().toString().toUpperCase()}:
-                  
-                  URL:${request.url()}:
-                  
-                  Headers:${request.headers()}
-                  
-                  Attributes:${request.attributes()}
-                  
-                  
-                  """.trimIndent()
-            )
-            next.exchange(request)
+            next.exchange(request).doOnSuccess { LOG.info("webclient call complete") }
         }
 
-    private val webClient = webClientBuilder
-        .filter(printlnFilter).build()
+    private val webClient = webClientBuilder.filter(printlnFilter).build()
 
     suspend fun executeCall(): String? {
         return webClient
             .get()
-            .uri("https://google.com")
+            .uri("https://httpbin.org/get")
             .retrieve()
             .bodyToMono<String>()
             .awaitSingleOrNull()
